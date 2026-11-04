@@ -1,2 +1,2 @@
-# FauxM0n.gba
+# FauxM0n.c
 Gba rom
