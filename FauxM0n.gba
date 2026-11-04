@@ -1,0 +1,92 @@
+#include <gba.h>
+#include <stdio.h>
+#include <string.h>
+
+// Game States
+typedef enum {
+    STATE_OVERWORLD,
+    STATE_BATTLE_MENU
+} GameState;
+
+typedef struct {
+    char name[12];
+    uint8_t level;
+    int16_t hp;
+    int16_t max_hp;
+    uint8_t attack;
+    uint8_t defense;
+    uint8_t catch_rate;
+} Monster;
+
+int player_x = 112;
+int player_y = 72;
+GameState current_state = STATE_OVERWORLD;
+
+Monster player_party[6];
+Monster wild_monster;
+
+// Simple random number generator
+uint32_t rng_seed = 42;
+uint32_t next_rand(void) {
+    rng_seed = rng_seed * 1103515245 + 12345;
+    return (uint32_t)(rng_seed / 65536) % 32768;
+}
+
+void spawn_wild_monster(void) {
+    strcpy(wild_monster.name, "Fangling");
+    wild_monster.level = 3;
+    wild_monster.hp = 15;
+    wild_monster.max_hp = 15;
+    wild_monster.attack = 6;
+    wild_monster.defense = 4;
+    wild_monster.catch_rate = 180;
+}
+
+int main(void) {
+    // Initialize GBA interrupts and background modes
+    irqInit();
+    irqEnable(IRQ_VBLANK);
+
+    // Set Video Mode 0 with Background 0 enabled
+    REG_DISPCNT = MODE_0 | BG0_ENABLE;
+
+    // Initialize Starter Monster
+    strcpy(player_party[0].name, "Startermon");
+    player_party[0].level = 5;
+    player_party[0].hp = 25;
+    player_party[0].max_hp = 25;
+    player_party[0].attack = 12;
+    player_party[0].defense = 8;
+
+    while(1) {
+        // Wait for screen refresh (VBlank) to keep gameplay smooth
+        VBlankIntrWait();
+
+        // Read button inputs using devkitPro built-in functions
+        scanKeys();
+        u16 keys = keysDown();
+        u16 keysHeld = keysHeld();
+
+        if (current_state == STATE_OVERWORLD) {
+            // Overworld movement controls
+            if (keysHeld & KEY_LEFT && player_x > 8)   player_x -= 1;
+            if (keysHeld & KEY_RIGHT && player_x < 224) player_x += 1;
+            if (keysHeld & KEY_UP && player_y > 8)    player_y -= 1;
+            if (keysHeld & KEY_DOWN && player_y < 144)  player_y += 1;
+
+            // Random encounter check when moving
+            if ((keysHeld & (KEY_LEFT | KEY_RIGHT | KEY_UP | KEY_DOWN)) && (next_rand() % 200) == 0) {
+                spawn_wild_monster();
+                current_state = STATE_BATTLE_MENU;
+            }
+        } 
+        else if (current_state == STATE_BATTLE_MENU) {
+            // Press A to exit battle and go back to exploring
+            if (keys & KEY_A) {
+                current_state = STATE_OVERWORLD;
+            }
+        }
+    }
+
+    return 0;
+}
