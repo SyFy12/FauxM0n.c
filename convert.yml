@@ -1,1 +1,18 @@
 /workflows/convert.yml
+
+audio:
+  - input: "assets/audio/bgm.wav"
+    output: "src/audio_data.h"
+    format: "pcm8"
+    sample_rate: 16000 # GBA usually caps around 16kHz - 18kHz to save CPU
+video:
+  - input: "assets/video/intro.mp4"
+    output: "src/video_data.bin"
+    fps: 15 # Lower frame rate saves massive space
+    width: 240 # GBA native resolution width
+    height: 160 # GBA native resolution height
+images:
+  - input: "assets/images/titlescreen.png"
+    output: "src/gfx_data.c"
+    mode: "sprites" # or "background"
+    bpp: 8 # 8 bits per pixel (256 colors) or 4 (16 colors)
